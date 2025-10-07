@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --port 3001",
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@vercel/blob": "^1.1.1",
+    "multiparty": "^4.2.3",
     "next": "15.5.3",
+    "openai": "^6.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

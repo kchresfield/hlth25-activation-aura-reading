@@ -1,8 +1,9 @@
 'use client'
 import React, { useRef, useState } from 'react';
-import fetchDropdownOptions from './fetchDropdownOptions';
+// import fetchDropdownOptions from './fetchDropdownOptions';
 import Image from 'next/image';
 import {put} from '@vercel/blob';
+import AudioRecorder from "./AudioRecorder";
 
 const VERCEL_BLOB_UPLOAD_URL = 'https://blob.vercel-storage.com/upload'; // Replace with your Vercel Blob endpoint
 
@@ -14,18 +15,16 @@ export default function FormCapture() {
     inputText: '',
     dropdown: ''
   });
-  const [recording, setRecording] = useState(false);
   const [dropdownOptions, setDropdownOptions] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [audioSummary, setAudioSummary] = useState("");
 
   // Fetch dropdown options from database
   React.useEffect(() => {
-    fetchDropdownOptions().then(setDropdownOptions);
+    // fetchDropdownOptions().then(setDropdownOptions);
   }, []);
 
   // Picture capture from camera
@@ -75,26 +74,6 @@ export default function FormCapture() {
     });
   };
 
-  // Voice recording
-  const startRecording = async () => {
-    setRecording(true);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    chunksRef.current = [];
-    mediaRecorderRef.current.ondataavailable = (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    };
-    mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-      setForm((prev) => ({ ...prev, voice: blob }));
-    };
-    mediaRecorderRef.current.start();
-  };
-  const stopRecording = () => {
-    setRecording(false);
-    mediaRecorderRef.current.stop();
-  };
-
   // Input box
   const handleInput = (e) => {
     setForm({ ...form, inputText: e.target.value });
@@ -102,11 +81,11 @@ export default function FormCapture() {
 
   // Dropdown
   const handleDropdown = (e) => {
-    setForm({ ...form, dropdown: e.target.value });
-    // If manual entry is selected, clear inputText
-    if (e.target.value !== 'manual') {
-      setForm(prev => ({ ...prev, inputText: '' }));
-    }
+    // setForm({ ...form, dropdown: e.target.value });
+    // // If manual entry is selected, clear inputText
+    // if (e.target.value !== 'manual') {
+    //   setForm(prev => ({ ...prev, inputText: '' }));
+    // }
   };
 
   // Upload blob to Vercel Blob Storage ///////////////////////////////////////////////////////////////////////////////////////////
@@ -126,22 +105,20 @@ export default function FormCapture() {
     e.preventDefault();
     const data = new FormData();
     let pictureUrl = '';
-    let voiceUrl = '';
     if (form.picture) {
       pictureUrl = await uploadBlobToVercel(form.picture, 'picture.jpg');
       data.append('pictureUrl', pictureUrl);
     }
-    if (form.voice) {
-      voiceUrl = await uploadBlobToVercel(form.voice, 'voice.webm');
-      data.append('voiceUrl', voiceUrl);
-    }
+    data.append('summary', audioSummary);
     data.append('buttonSelection', JSON.stringify(form.buttonSelection));
     data.append('inputText', form.inputText);
     data.append('dropdown', form.dropdown);
-    await fetch('https://your-server.com/api/submit', {
-      method: 'POST',
-      body: data
-    });
+    
+    
+    // await fetch('https://your-server.com/api/submit', {
+    //   method: 'POST',
+    //   body: data
+    // });
     alert('Form submitted!');
   };
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,11 +158,7 @@ export default function FormCapture() {
       </div>
       <div>
         <label className="block mb-2 font-bold">Voice recording:</label>
-        {!recording ? (
-          <button type="button" onClick={startRecording} className="bg-green-500 text-white px-3 py-1 rounded">Start</button>
-        ) : (
-          <button type="button" onClick={stopRecording} className="bg-red-500 text-white px-3 py-1 rounded">Stop</button>
-        )}
+        <AudioRecorder onSummary={setAudioSummary}/>
       </div>
       <div>
         <label className="block mb-2 font-bold">Dropdown:</label>
