@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 export default function AudioRecorder({ onSummary }) {
   const [recording, setRecording] = useState(false);
   const [summary, setSummary] = useState("");
+  const [loading, setLoading] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -29,6 +30,7 @@ export default function AudioRecorder({ onSummary }) {
   };
 
   const handleRecordAndSummarize = async () => {
+    setLoading(true);
     const audioBlob = await stopRecording();
     const formData = new FormData();
     formData.append("file", audioBlob, "aura-recording.webm");
@@ -41,6 +43,7 @@ export default function AudioRecorder({ onSummary }) {
     const data = await res.json();
     if (onSummary) onSummary(data.summary || "");
     setSummary(data.summary);
+    setLoading(false);
   };
 
   return (
@@ -51,7 +54,12 @@ export default function AudioRecorder({ onSummary }) {
         <button className="bg-red-500 text-white px-3 py-1 rounded" type="button" onClick={handleRecordAndSummarize} >Stop & Summarize</button>
       )}
       <h2>Summary</h2>
-      <pre>{summary}</pre>
+      {loading && (
+        <div className="w-full h-2 bg-gray-300 rounded mb-2">
+          <div className="h-2 bg-purple-500 rounded animate-pulse" style={{ width: '100%' }}></div>
+        </div>
+      )}
+      <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{summary}</pre>
     </div>
   );
 }

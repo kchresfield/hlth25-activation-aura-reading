@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You are a summerization bot for aura readings. All summarizations will be done in the first person. Please summerize the following conversation clearly and concisely, making sure to capture details about the colors.",
+            content: "You are a summerization bot for aura readings. All summarizations will be done in the second person, using your/you statements. Please summerize the following conversation clearly and concisely, making sure to capture details about the colors.",
           },
           {
             role: "user",

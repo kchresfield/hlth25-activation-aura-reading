@@ -2,7 +2,7 @@
 import React, { useRef, useState } from 'react';
 // import fetchDropdownOptions from './fetchDropdownOptions';
 import Image from 'next/image';
-import {put} from '@vercel/blob';
+import { put } from '@vercel/blob';
 import AudioRecorder from "./AudioRecorder";
 
 const VERCEL_BLOB_UPLOAD_URL = 'https://blob.vercel-storage.com/upload'; // Replace with your Vercel Blob endpoint
@@ -63,7 +63,7 @@ export default function FormCapture() {
 
   // Multi-select button selection
   const colorOptions = [
-    'Violet', 'Indigo', 'Blue', 'Green', 'Yellow', 'Orange', 'Red', 'Pink', 'Magenta', 'Turquoise', 'Tan', 'White'
+    'violet', 'indigo', 'blue', 'green', 'yellow', 'orange', 'red', 'pink', 'magenta', 'turquoise', 'tan', 'white'
   ];
   const handleButton = (val) => {
     setForm(prev => {
@@ -83,45 +83,64 @@ export default function FormCapture() {
   const handleDropdown = (e) => {
     // setForm({ ...form, dropdown: e.target.value });
     // // If manual entry is selected, clear inputText
-    // if (e.target.value !== 'manual') {
-    //   setForm(prev => ({ ...prev, inputText: '' }));
-    // }
+    if (e.target.value !== 'manual') {
+      setForm(prev => ({ ...prev, inputText: '' }));
+    }
   };
 
   // Upload blob to Vercel Blob Storage ///////////////////////////////////////////////////////////////////////////////////////////
   function uploadBlobToVercel(defaultPath = "uploads/default.png") {
-  async function upload(file, path = defaultPath) {
-    if (!file) throw new Error("No file provided for upload");
+    async function upload(file, path = defaultPath) {
+      if (!file) throw new Error("No file provided for upload");
 
-    const blob = await put(path, file, { access: "public" });
-    return blob;
+      const blob = await put(path, file, { access: "public" });
+      return blob;
+    }
+
+    return { upload };
   }
-
-  return { upload };
-}
 
   // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = new FormData();
     let pictureUrl = '';
+    // Upload image to Vercel Blob and get public URL
     if (form.picture) {
-      pictureUrl = await uploadBlobToVercel(form.picture, 'picture.jpg');
-      data.append('pictureUrl', pictureUrl);
+      const formData = new FormData();
+      formData.append('photo', form.picture, 'picture.jpg'); // <-- send as 'photo'
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      pictureUrl = data.url;
+      console.log('Image uploaded to Vercel:', pictureUrl);
     }
-    data.append('summary', audioSummary);
-    data.append('buttonSelection', JSON.stringify(form.buttonSelection));
-    data.append('inputText', form.inputText);
-    data.append('dropdown', form.dropdown);
-    
-    
-    // await fetch('https://your-server.com/api/submit', {
-    //   method: 'POST',
-    //   body: data
-    // });
-    alert('Form submitted!');
+    // Prepare form data for send-reading
+    const submitData = new FormData();
+    submitData.append('mediaUrl', pictureUrl); // <-- send as 'mediaUrl' for Twilio
+    submitData.append('summary', audioSummary);
+    submitData.append('buttonSelection', JSON.stringify(form.buttonSelection));
+    submitData.append('inputText', form.inputText);
+    submitData.append('dropdown', form.dropdown);
+    await fetch("/api/send-reading", {
+      method: 'POST',
+      body: submitData
+    });
+    // alert('Form submitted!');
+    // Reset form state
+    setForm({
+      picture: null,
+      buttonSelection: [],
+      voice: null,
+      inputText: '',
+      dropdown: ''
+    });
+    setImagePreview(null);
+    setShowCamera(false);
+    setAudioSummary("");
   };
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 max-w-lg mx-auto">
       <div>
@@ -158,7 +177,7 @@ export default function FormCapture() {
       </div>
       <div>
         <label className="block mb-2 font-bold">Voice recording:</label>
-        <AudioRecorder onSummary={setAudioSummary}/>
+        <AudioRecorder onSummary={setAudioSummary} />
       </div>
       <div>
         <label className="block mb-2 font-bold">Dropdown:</label>

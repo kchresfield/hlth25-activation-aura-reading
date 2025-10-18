@@ -3,6 +3,7 @@ export default function Admin() {
     return (
         <div className="font-sans min-h-screen bg-[#001F3F] flex flex-col items-center p-0">
             <h1 className="text-white text-2xl font-bold mt-6 mb-4 w-full text-center">Aura Booking Portal</h1>
+            <h3 className="text-white text-m font-bold mt-6 mb-4 w-full text-center">Powered by Twilio!</h3>
             <main className="w-full flex-1 flex flex-col items-center">
                 <div id="iframeContainer" style={{position:'relative', width: '100%', height:'800px'}}>
                     {/* <div
