@@ -142,7 +142,7 @@ export default function FormCapture() {
   };
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 p-4 max-w-lg mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-4 p-4 max-w-lg mx-auto text-white" >
       <div>
         <label className="block mb-2 font-bold">Take a picture:</label>
         <input type="file" accept="image/*" capture="environment" onChange={handlePicture} className="mb-2" />
