@@ -15,6 +15,11 @@ const twilioClient = Twilio(
     process.env.TWILIO_AUTH_TOKEN
 );
 
+const twilioClientWhatsapp = Twilio(
+    process.env.TWILIO_ACCOUNT_SID_WHATSAPP,
+    process.env.TWILIO_AUTH_TOKEN_WHATSAPP
+)
+
 function colorUrl(color) {
     switch (color.toLowerCase()) {
         case 'violet':
@@ -60,17 +65,26 @@ export default async function handler(req, res) {
         }
 
         try {
+            
             const summary = fields.summary?.[0] || "No summary provided";
             const notes = fields.notes?.[0] || "";
             const buttonSelection = fields.buttonSelection?.[0] || "";
             const inputText = fields.inputText?.[0] || "";
             let arr = JSON.parse(buttonSelection);
-            
+
+            // New: Get dropdown values
+            const firstName = fields.first_name?.[0] || "";
+            const phone = fields.phone?.[0] || "";
+            // Get delivery method from form
+            const service = fields.service?.[0] || fields.deliveryMethod?.[0]; // Default to SMS if not provided
+
+            console.log("Dropdown values:", { firstName, phone, service });
             console.log("Button Selection:", buttonSelection);
             console.log("Input Text:", inputText);
+            
 
             let mediaUrl = fields.mediaUrl?.[0] || null;
-            let mediaUrlToSend=[mediaUrl,]
+            let mediaUrlToSend = [mediaUrl,]
             arr.forEach(color => {
                 mediaUrlToSend.unshift(colorUrl(color));
             });
@@ -86,14 +100,37 @@ export default async function handler(req, res) {
             }
 
             console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!Media URL:", mediaUrl);
-            const message = await twilioClient.messages.create({
-                from: process.env.TWILIO_NUMBER,
-                to: process.env.MY_PHONE_NUMBER,
-                body: `Summary:\n${summary}\n`,
-                ...(mediaUrl ? { mediaUrl: mediaUrlToSend } : {}),
-            });
+            // Use service variable for delivery method
+            const deliveryMethod = service;
+            // Use phone and firstName for recipient info
+            let recipientName = firstName;
+            let recipientPhone = phone || process.env.MY_PHONE_NUMBER;
 
-            return res.status(200).json({ success: true, /*sid: message.sid*/ });
+            // If no dropdown option selected, use manual entry
+            if (!firstName && !phone && fields.manualName?.[0] && fields.manualPhone?.[0]) {
+                recipientName = fields.manualName[0];
+                recipientPhone = fields.manualPhone[0];
+            }
+
+            if (deliveryMethod.toLowerCase() === 'whatsapp') {
+                console.log("Sending WhatsApp via Twilio to", recipientPhone);
+                await twilioClientWhatsapp.messages.create({
+                    from: process.env.TWILIO_NUMBER_WHATSAPP,
+                    to: `whatsapp:${recipientPhone}`,
+                    body: `Summary for ${recipientName}:\n${summary}`,
+                    ...(mediaUrl ? { mediaUrl: mediaUrlToSend } : {}),
+                });
+            } else {
+                console.log("Sending SMS via Twilio to", recipientPhone);
+                await twilioClient.messages.create({
+                    from: process.env.TWILIO_NUMBER,
+                    to: recipientPhone,
+                    body: `Summary for ${recipientName}:\n${summary}`,
+                    ...(mediaUrl ? { mediaUrl: mediaUrlToSend } : {}),
+                });
+            }
+
+            return res.status(200).json({ success: true });
         } catch (error) {
             console.error("Error sending Twilio message:", error);
             return res.status(500).json({ error: error.message });

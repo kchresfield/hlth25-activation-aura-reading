@@ -34,6 +34,9 @@ export async function fetchDropdownOptionsFromSupabase() {
   // Map to dropdown format
   return filtered.map(row => ({
     value: row.id,
-    label: `${row.first_name} ${row.phone} ${row.service}`
+    label: `${row.first_name} ${row.phone} ${row.service}`,
+    first_name: row.first_name,
+    phone: row.phone,
+    service: row.service
   }));
 }

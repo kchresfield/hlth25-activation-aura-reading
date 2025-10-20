@@ -25,6 +25,8 @@ export default function FormCapture() {
   const [deliveryMethod, setDeliveryMethod] = useState('SMS');
   const [manualName, setManualName] = useState("");
   const [manualPhone, setManualPhone] = useState("");
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [summary, setSummary] = useState("");
 
   // Fetch dropdown options from database
   React.useEffect(() => {
@@ -85,9 +87,15 @@ export default function FormCapture() {
 
   // Dropdown
   const handleDropdown = (e) => {
-    setForm(prev => ({ ...prev, dropdown: e.target.value }));
-    if (e.target.value !== 'manual') {
+    const value = e.target.value;
+    setForm(prev => ({ ...prev, dropdown: value }));
+    if (value !== 'manual') {
       setForm(prev => ({ ...prev, inputText: '' }));
+      // Find the selected option object
+      const opt = dropdownOptions.find(o => o.value === value);
+      setSelectedOption(opt || null);
+    } else {
+      setSelectedOption(null);
     }
   };
 
@@ -130,12 +138,16 @@ export default function FormCapture() {
     }
     // Prepare form data for send-reading
     const submitData = new FormData();
-    submitData.append('mediaUrl', pictureUrl); // <-- send as 'mediaUrl' for Twilio
-    submitData.append('summary', audioSummary);
+    submitData.append('mediaUrl', pictureUrl);
+    submitData.append('summary', summary);
     submitData.append('buttonSelection', JSON.stringify(form.buttonSelection));
     submitData.append('inputText', form.inputText);
     submitData.append('dropdown', form.dropdown);
-    submitData.append('deliveryMethod', deliveryMethod); // <-- collect selected value
+    submitData.append('deliveryMethod', deliveryMethod);
+    // Use selectedOption safely
+    submitData.append('first_name', selectedOption?.first_name || '');
+    submitData.append('phone', selectedOption?.phone || '');
+    submitData.append('service', selectedOption?.service || '');
     if (form.dropdown === 'manual') {
       submitData.append('manualName', manualName);
       submitData.append('manualPhone', manualPhone);
@@ -158,6 +170,7 @@ export default function FormCapture() {
     setAudioSummary("");
     setManualName("");
     setManualPhone("");
+    setSummary("");
   };
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   return (
@@ -196,7 +209,17 @@ export default function FormCapture() {
       </div>
       <div>
         <label className="block mb-2 font-bold">Voice recording:</label>
-        <AudioRecorder onSummary={setAudioSummary} />
+        <AudioRecorder onSummary={setSummary} />
+      </div>
+      <div>
+        <label className="block mb-2 font-bold">Summary:</label>
+        <input
+          type="text"
+          value={summary}
+          onChange={e => setSummary(e.target.value)}
+          className="border px-3 py-2 rounded text-black w-full bg-white mb-2"
+          placeholder="Enter or edit summary here"
+        />
       </div>
       <div>
         <label className="block mb-2 font-bold">Dropdown:</label>
@@ -211,7 +234,6 @@ export default function FormCapture() {
       {form.dropdown === 'manual' && (
         <div>
           <label className="block mb-2 font-bold">Manual Entry:</label>
-          {/* <input type="text" value={form.inputText} onChange={handleInput} className="border px-3 py-2 rounded text-black w-full mb-2" placeholder="Manual Entry" /> */}
           <input type="text" value={manualName} onChange={handleManualName} className="border px-3 py-2 rounded text-black w-full mb-2 bg-white" placeholder="Name" />
           <input type="text" value={manualPhone} onChange={handleManualPhone} className="border px-3 py-2 rounded text-black w-full bg-white" placeholder="Phone Number" />
         </div>
