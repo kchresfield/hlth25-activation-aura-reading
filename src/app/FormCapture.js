@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import { put } from '@vercel/blob';
 import AudioRecorder from "./AudioRecorder";
+import { fetchDropdownOptionsFromSupabase } from './fetchDropdownOptions';
 
 const VERCEL_BLOB_UPLOAD_URL = 'https://blob.vercel-storage.com/upload'; // Replace with your Vercel Blob endpoint
 
@@ -27,7 +28,7 @@ export default function FormCapture() {
 
   // Fetch dropdown options from database
   React.useEffect(() => {
-    // fetchDropdownOptions().then(setDropdownOptions);
+    fetchDropdownOptionsFromSupabase().then(setDropdownOptions);
   }, []);
 
   // Picture capture from camera
