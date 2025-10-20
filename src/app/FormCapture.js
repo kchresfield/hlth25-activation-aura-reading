@@ -21,6 +21,9 @@ export default function FormCapture() {
   const canvasRef = useRef(null);
   const [showCamera, setShowCamera] = useState(false);
   const [audioSummary, setAudioSummary] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState('SMS');
+  const [manualName, setManualName] = useState("");
+  const [manualPhone, setManualPhone] = useState("");
 
   // Fetch dropdown options from database
   React.useEffect(() => {
@@ -81,12 +84,20 @@ export default function FormCapture() {
 
   // Dropdown
   const handleDropdown = (e) => {
-    // setForm({ ...form, dropdown: e.target.value });
-    // // If manual entry is selected, clear inputText
+    setForm(prev => ({ ...prev, dropdown: e.target.value }));
     if (e.target.value !== 'manual') {
       setForm(prev => ({ ...prev, inputText: '' }));
     }
   };
+
+  // Delivery method selection
+  const handleDeliveryMethod = (method) => {
+    setDeliveryMethod(method);
+  };
+
+  // Manual Entry handlers
+  const handleManualName = (e) => setManualName(e.target.value);
+  const handleManualPhone = (e) => setManualPhone(e.target.value);
 
   // Upload blob to Vercel Blob Storage ///////////////////////////////////////////////////////////////////////////////////////////
   function uploadBlobToVercel(defaultPath = "uploads/default.png") {
@@ -123,6 +134,11 @@ export default function FormCapture() {
     submitData.append('buttonSelection', JSON.stringify(form.buttonSelection));
     submitData.append('inputText', form.inputText);
     submitData.append('dropdown', form.dropdown);
+    submitData.append('deliveryMethod', deliveryMethod); // <-- collect selected value
+    if (form.dropdown === 'manual') {
+      submitData.append('manualName', manualName);
+      submitData.append('manualPhone', manualPhone);
+    }
     await fetch("/api/send-reading", {
       method: 'POST',
       body: submitData
@@ -139,6 +155,8 @@ export default function FormCapture() {
     setImagePreview(null);
     setShowCamera(false);
     setAudioSummary("");
+    setManualName("");
+    setManualPhone("");
   };
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////
   return (
@@ -192,9 +210,30 @@ export default function FormCapture() {
       {form.dropdown === 'manual' && (
         <div>
           <label className="block mb-2 font-bold">Manual Entry:</label>
-          <input type="text" value={form.inputText} onChange={handleInput} className="border px-3 py-2 rounded text-black w-full" />
+          {/* <input type="text" value={form.inputText} onChange={handleInput} className="border px-3 py-2 rounded text-black w-full mb-2" placeholder="Manual Entry" /> */}
+          <input type="text" value={manualName} onChange={handleManualName} className="border px-3 py-2 rounded text-black w-full mb-2 bg-white" placeholder="Name" />
+          <input type="text" value={manualPhone} onChange={handleManualPhone} className="border px-3 py-2 rounded text-black w-full bg-white" placeholder="Phone Number" />
         </div>
       )}
+      <div>
+        <label className="block mb-2 font-bold">Delivery Method:</label>
+        <div className="flex gap-4">
+          <button
+            type="button"
+            className={deliveryMethod === 'SMS' ? "bg-blue-500 text-white px-4 py-2 rounded" : "bg-white text-black px-4 py-2 rounded border"}
+            onClick={() => handleDeliveryMethod('SMS')}
+          >
+            SMS
+          </button>
+          <button
+            type="button"
+            className={deliveryMethod === 'WhatsApp' ? "bg-blue-500 text-white px-4 py-2 rounded" : "bg-white text-black px-4 py-2 rounded border"}
+            onClick={() => handleDeliveryMethod('WhatsApp')}
+          >
+            WhatsApp
+          </button>
+        </div>
+      </div>
       <button type="submit" className="bg-red-600 text-white px-6 py-3 rounded font-bold text-xl">Submit</button>
     </form>
   );
